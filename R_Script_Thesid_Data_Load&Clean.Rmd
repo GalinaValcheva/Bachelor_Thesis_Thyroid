@@ -1,0 +1,140 @@
+---
+title: "Thyroid"
+output: html_document
+date: '2024-09-19'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+# Load the packages
+
+library(foreign)
+library(dplyr)
+
+
+
+```
+
+
+```{r }
+
+
+#Data laoding 
+data_cog_thyroid <- read.xport("/Users/galinavalcheva/Downloads/CFQ_G.xpt")
+data_lab_thyroid<- read.xport("/Users/galinavalcheva/Downloads/THYROD_G.xpt")
+data_demo_thyroid<- read.xport("/Users/galinavalcheva/Downloads/DEMO_G.xpt")
+
+
+```
+
+
+```{r }
+
+#Cognitive function dataset trim
+
+
+#filter columns
+data_cog_thyroid <- data_cog_thyroid %>% filter(CFASTAT == 1 )
+data_cog_thyroid <- data_cog_thyroid %>% filter(CFDCCS == 1 )
+data_cog_thyroid <- data_cog_thyroid %>% filter(CFDAPP == 1 )
+data_cog_thyroid <- data_cog_thyroid %>% filter(CFDDPP == 1 )
+
+#drop columns
+columns_to_drop <- c("CFALANG", "CFDCRNC", "CFDARNC", "CFDDRNC")
+
+data_cog_thyroid <- data_cog_thyroid %>% select(-all_of(columns_to_drop))
+
+
+```
+
+
+
+```{r }
+
+#Demographics dataset trim
+
+#filter columns
+data_demo_thyroid <- data_demo_thyroid %>% filter(RIDSTATR == 2)
+data_demo_thyroid <- data_demo_thyroid %>% filter(INDHHIN2 %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,  14, 15))
+data_demo_thyroid <- data_demo_thyroid %>% filter(INDFMIN2 %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15))
+data_demo_thyroid <- data_demo_thyroid %>% filter(DMDEDUC2 %in% c(1, 2, 3, 4, 5))
+
+
+#drop columns
+columns_to_drop <- c( "SDDSRVYR", "RIDAGEMN", "RIDRETH1", "RIDEXMON", "RIDEXAGY", "RIDEXAGM", "DMQMILIZ", "DMQADFC", "DMDBORN4", "DMDCITZN", "DMDYRSUS", "DMDEDUC3", "DMDMARTL", "RIDEXPRG", "SIALANG", "SIAPROXY", "SIAINTRP", "FIALANG", "FIAPROXY", "FIAINTRP", "MIALANG", "MIAPROXY", "MIAINTRP", "AIALANGA", "WTINT2YR", "WTMEC2YR", "SDMVPSU", "SDMVSTRA", "INDFMPIR", "DMDHHSZA", "DMDHHSZB", "DMDHHSZE", "DMDHRGND", "DMDHRAGE", "DMDHRBR4", "DMDHREDU", "DMDHRMAR", "DMDHSEDU" )
+
+data_demo_thyroid <- data_demo_thyroid %>%
+  select(-all_of(columns_to_drop))
+
+```
+
+```{r }
+
+#Thyroid dataset trim
+
+#only DROP NAs from LAB since they are very few
+data_lab_thyroid <- na.omit(data_lab_thyroid)
+
+#keep these colums
+selected_columns <- c("SEQN", "WTSA2YR", "LBXT3F", "LBXTT3", "LBXT4F", "LBXTT4", "LBXTGN", "LBXATG", 
+                      "LBXTSH1", "LBXTPO" )
+
+data_lab_thyroid <- data_lab_thyroid %>% select(all_of(selected_columns))
+
+
+```
+
+
+
+
+```{r}
+
+# Merge the cleaned datasets on the SEQN variable
+merged_data <- inner_join(data_cog_thyroid, data_lab_thyroid, by = "SEQN")
+cog_lab_demo<-inner_join(merged_data,data_demo_thyroid, by="SEQN")
+
+
+
+```
+
+```{r}
+
+#Exporting with row names
+write.csv(cog_lab_demo, file = "~/Desktop/cog_lab_demo_final.csv", row.names = FALSE)
+
+```
+
+
+```{r}
+
+#some data inspection
+# Count the number of males (RIAGENDR == 1)
+num_males <- sum(cog_lab_demo$RIAGENDR == 1)
+num_females <- sum(cog_lab_demo$RIAGENDR == 2)
+# Print the result
+num_males
+num_females
+total_count <- nrow(cog_lab_demo)
+
+
+# Print the total count
+print(total_count)
+
+
+```
+
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
